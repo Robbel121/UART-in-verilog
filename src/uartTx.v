@@ -40,7 +40,6 @@ module uartTx #(CLK_PER_BIT = 9'd434)(
     reg [1:0] state;
     
     reg tx_finish_reg = 1'b0;
-    reg tx_serial_reg = 1'b0;
     reg tx_active_reg = 1'b0;
     
     initial begin
@@ -50,7 +49,6 @@ module uartTx #(CLK_PER_BIT = 9'd434)(
     always @(posedge clk)begin
     case(state)
         IDLE : begin
-            tx_serial_reg <= 1'b1;
             index <= 0;
             clock_counter <= 0;
             tx_active_reg <= 1'b0;
@@ -66,7 +64,7 @@ module uartTx #(CLK_PER_BIT = 9'd434)(
         end
         
         START_BIT : begin
-                tx_serial_reg <= 1'b0;
+                tx_serial <= 1'b0;
                             
                 if(clock_counter < CLK_PER_BIT - 1)begin
                     clock_counter <= clock_counter + 1;
@@ -79,7 +77,7 @@ module uartTx #(CLK_PER_BIT = 9'd434)(
         end
         
         DATA_BIT : begin
-            tx_serial_reg <= data_reg[index];
+            tx_serial <= data_reg[index];
             
             if(clock_counter < CLK_PER_BIT - 1) begin
                 clock_counter <= clock_counter + 1;
@@ -100,7 +98,7 @@ module uartTx #(CLK_PER_BIT = 9'd434)(
         end
         
         STOP_BIT : begin
-                tx_serial_reg <= 1'b1;
+                tx_serial <= 1'b1;
                 if(clock_counter < CLK_PER_BIT - 1)begin
                     clock_counter <= clock_counter + 1;
                     state <= STOP_BIT;
@@ -108,18 +106,15 @@ module uartTx #(CLK_PER_BIT = 9'd434)(
                 else begin
                     clock_counter <= 0;
                     tx_finish_reg <= 1'b1;
-                    tx_serial_reg <= 1'b1;
+                    tx_serial <= 1'b1;
                     tx_active_reg <= 1'b0;
                     state <= IDLE;
                 end
         end
     endcase
-    $display("Time: %t, State: %b, clock_counter: %d, index: %d, tx_serial: %b", 
-         $time, state, clock_counter, index, tx_serial_reg);
     end
     
     assign tx_finish = tx_finish_reg;
     assign tx_active = tx_active_reg;
-    assign tx_serial = tx_serial_reg;
     
 endmodule
